@@ -1,0 +1,240 @@
+"use client"
+import { useRef, useState } from "react"
+import { Plus, Trash2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { FieldError } from "@/components/ui/field"
+import { FormField } from "@/components/form-field"
+import { CustomerFields, type Customer } from "@/components/customer-fields"
+import { AppSelect } from "@/components/app-select"
+import { ConfirmDelete } from "@/components/confirm-delete"
+import { useForm } from "@/hooks/use-form"
+import { orderSchema } from "@/lib/validation"
+import { send } from "@/lib/api"
+import { money, statuses, type Product, type Order } from "@/lib/types"
+export function OrderEditor({
+  order,
+  products,
+  onClose,
+  onSaved,
+}: {
+  order?: Order
+  products: Product[]
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const [customer, setCustomer] = useState<Customer>(
+      order?.customer || {
+        name: "",
+        contact: { platform: "LINE", account: "" },
+      }
+    ),
+    [items, setItems] = useState(
+      order?.items.map((i) => ({
+        product: i.product,
+        quantity: i.quantity,
+      })) || [{ product: "", quantity: 1 }]
+    ),
+    [status, setStatus] = useState(order?.status || "pending"),
+    [note, setNote] = useState(order?.note || ""),
+    [remove, setRemove] = useState<number | null>(null)
+  const key = useRef<string | null>(null),
+    { errors, pending, submit } = useForm()
+  const options = [
+    { value: "", label: "選擇商品" },
+    ...products.map((p) => ({
+      value: p.id,
+      label: `${p.name} · ${money(p.price)} · 剩 ${p.quantity}`,
+    })),
+    ...(order?.items
+      .filter((i) => !products.some((p) => p.id === i.product))
+      .map((i) => ({ value: i.product, label: `${i.name}（已刪除）` })) || []),
+  ]
+  return (
+    <Dialog
+      open
+      onOpenChange={(v) => {
+        if (!v && !pending) onClose()
+      }}
+    >
+      <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{order ? "編輯訂單" : "新增訂單"}</DialogTitle>
+          <DialogDescription>
+            {order?.number || "為私訊或面交顧客建立訂單，成立時會同步扣庫存。"}
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          noValidate
+          className="space-y-5"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void submit(
+              orderSchema,
+              { customer, items, note, status },
+              async (data) => {
+                if (order)
+                  await send(`/admin/orders/${order.id}`, "PUT", {
+                    ...data,
+                    version: order.version,
+                  })
+                else {
+                  key.current ||= crypto.randomUUID()
+                  const { status: unused, ...body } = data
+                  void unused
+                  await send("/admin/orders", "POST", {
+                    ...body,
+                    key: key.current,
+                  })
+                }
+                onSaved()
+                onClose()
+              }
+            )
+          }}
+        >
+          <CustomerFields
+            value={customer}
+            onChange={setCustomer}
+            errors={errors}
+          />
+          <div className="space-y-3">
+            <p className="text-sm font-medium">
+              訂單商品 <span className="text-destructive">*</span>
+            </p>
+            {items.map((item, index) => (
+              <div key={index} className="space-y-2">
+                <div className="grid grid-cols-[minmax(0,1fr)_76px_32px] items-end gap-2">
+                  <FormField
+                    id={`item-${index}`}
+                    label={`商品 ${index + 1}`}
+                    required
+                    error={errors[`items.${index}.product`]}
+                  >
+                    <AppSelect
+                      id={`item-${index}`}
+                      required
+                      value={item.product}
+                      options={options}
+                      onValueChange={(product) =>
+                        setItems(
+                          items.map((v, i) =>
+                            i === index ? { ...v, product } : v
+                          )
+                        )
+                      }
+                      className="w-full min-w-0"
+                    />
+                  </FormField>
+                  <FormField
+                    id={`count-${index}`}
+                    label="數量"
+                    required
+                    error={errors[`items.${index}.quantity`]}
+                  >
+                    <Input
+                      id={`count-${index}`}
+                      type="number"
+                      required
+                      min="1"
+                      step="1"
+                      value={item.quantity || ""}
+                      onChange={(e) =>
+                        setItems(
+                          items.map((v, i) =>
+                            i === index
+                              ? { ...v, quantity: Number(e.target.value) }
+                              : v
+                          )
+                        )
+                      }
+                    />
+                  </FormField>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`移除訂單商品 ${index + 1}`}
+                    onClick={() => setRemove(index)}
+                  >
+                    <Trash2 />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <FieldError>{errors.items}</FieldError>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setItems([...items, { product: "", quantity: 1 }])}
+            >
+              <Plus />
+              新增商品項目
+            </Button>
+          </div>
+          {order && (
+            <FormField
+              id="status"
+              label="訂單狀態"
+              required
+              error={errors.status}
+            >
+              <AppSelect
+                id="status"
+                required
+                value={status}
+                onValueChange={(v) => setStatus(v as Order["status"])}
+                options={Object.entries(statuses).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
+              />
+            </FormField>
+          )}
+          <FormField id="order-note" label="備註" error={errors.note}>
+            <Textarea
+              id="order-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </FormField>
+          <p className="text-xs leading-6 text-muted-foreground">
+            修改商品數量會同步調整庫存；取消訂單會補回庫存，恢復訂單時會重新檢查庫存。既有品項保留成立時的單價，新增品項使用目前單價。
+          </p>
+          <FieldError>{errors.form}</FieldError>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={onClose}
+            >
+              取消
+            </Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? "儲存中…" : "儲存訂單"}
+            </Button>
+          </DialogFooter>
+        </form>
+        {remove !== null && (
+          <ConfirmDelete
+            title="移除此訂單商品？"
+            description="儲存訂單後會同步調整庫存。"
+            onConfirm={() => setItems(items.filter((_, i) => i !== remove))}
+            onClose={() => setRemove(null)}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
