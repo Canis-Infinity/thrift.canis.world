@@ -1,4 +1,5 @@
 "use client"
+import { ContactSeller } from "@/components/contact-seller"
 import { useData } from "@/hooks/use-data"
 import { PageSkeleton } from "@/components/page-skeleton"
 import { EmptyState } from "@/components/empty-state"
@@ -37,6 +38,9 @@ export function OrderLinkPage({ token }: { token: string }) {
       </div>
       <p className="text-right font-mono text-xl">合計 {money(order.total)}</p>
       <p className="mt-8">請截圖私訊我訂單編號</p>
+      <div className="mt-4">
+        <ContactSeller />
+      </div>
       <p className="mt-3 text-sm text-muted-foreground">
         交付方式與運費私訊詳談。此連結可查看訂單，請妥善保管。
       </p>

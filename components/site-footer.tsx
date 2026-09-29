@@ -4,7 +4,7 @@ export function SiteFooter() {
       <p>
         © 2026{" "}
         <a
-          href="https://iistw.com/"
+          href="https://canis.world/"
           target="_blank"
           rel="noreferrer"
           className="underline-offset-4 transition-colors hover:text-foreground hover:underline"

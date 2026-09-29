@@ -47,34 +47,34 @@ export function AuthForm({ register = false }: { register?: boolean }) {
       <div className="hidden flex-col justify-between gap-12 rounded-2xl bg-muted p-8 sm:p-12 md:flex">
         <div>
           <div className="mb-12 flex items-center gap-2 text-xs tracking-widest">
-            <Recycle className="size-4" /> A SECOND CHAPTER
+            <Recycle className="size-4" /> 二手物品
           </div>
           <h2 className="text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-            喜歡的物品，
+            先逛逛，
             <br />
-            值得下一段
+            喜歡再下單
             <br />
-            好日常。
+            帶回家！
           </h2>
           <p className="mt-6 max-w-sm text-sm leading-7 text-muted-foreground">
-            將閒置留給需要，讓好物繼續陪伴。
+            不用註冊也能買，留下聯繫方式就好。
             <br />
-            登入後，一起收藏生活裡的剛剛好。
+            想把訂單留在帳號裡，可以登入後再買。
           </p>
         </div>
-        <p className="text-xs text-muted-foreground">THRIFT / BY CANIS</p>
+        <p className="text-xs text-muted-foreground">THRIFT</p>
       </div>
       <div className="mx-auto w-full max-w-md py-3">
         <p className="text-xs tracking-widest text-muted-foreground">
-          {register ? "JOIN THE CIRCLE" : "WELCOME BACK"}
+          {register ? "會員註冊" : "會員登入"}
         </p>
         <h1 className="mt-3 text-3xl font-semibold">
-          {register ? "建立帳號" : "歡迎回來"}
+          {register ? "註冊帳號" : "登入"}
         </h1>
         <p className="mt-3 mb-8 text-sm text-muted-foreground">
           {register
-            ? "註冊完成即可登入，不需等待審核。"
-            : "登入以追蹤訂單，也可以直接使用訪客結帳。"}
+            ? "填好資料就能開始使用，不用等審核。"
+            : "登入後可查看使用此帳號成立的訂單。"}
         </p>
         <form
           noValidate
@@ -219,7 +219,6 @@ export function AuthForm({ register = false }: { register?: boolean }) {
                 onCheckedChange={(v) => setRemember(!!v)}
               />
               記住帳號
-              <span className="text-xs text-muted-foreground">僅記住信箱</span>
             </label>
           )}
           <FieldError>{errors.form}</FieldError>
@@ -228,12 +227,12 @@ export function AuthForm({ register = false }: { register?: boolean }) {
             <ArrowRight />
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            {register ? "已經有帳號？" : "第一次來？"}{" "}
+            {register ? "已經有帳號？" : "還沒有帳號？"}{" "}
             <Link
               className="text-foreground underline underline-offset-4"
               href={register ? "/login" : "/register"}
             >
-              {register ? "立即登入" : "註冊帳號"}
+              {register ? "登入" : "註冊帳號"}
             </Link>
           </p>
         </form>

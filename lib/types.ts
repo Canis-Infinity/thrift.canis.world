@@ -7,7 +7,7 @@ export type User = {
   name: string
   email: string
   phone: string
-  contact: Contact
+  contact?: Contact
   role: "admin" | "user"
   status: "active" | "suspended"
   version: number

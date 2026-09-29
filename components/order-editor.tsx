@@ -66,16 +66,17 @@ export function OrderEditor({
         if (!v && !pending) onClose()
       }}
     >
-      <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[92svh] flex-col overflow-hidden sm:max-w-2xl">
+        <DialogHeader className="shrink-0 pr-6">
           <DialogTitle>{order ? "編輯訂單" : "新增訂單"}</DialogTitle>
           <DialogDescription>
             {order?.number || "為私訊或面交顧客建立訂單，成立時會同步扣庫存。"}
           </DialogDescription>
         </DialogHeader>
         <form
+          id="order-editor-form"
           noValidate
-          className="space-y-5"
+          className="-mx-4 min-h-0 space-y-5 overflow-y-auto px-4 py-1"
           onSubmit={(e) => {
             e.preventDefault()
             void submit(
@@ -144,6 +145,7 @@ export function OrderEditor({
                     <Input
                       id={`count-${index}`}
                       type="number"
+                      inputMode="numeric"
                       required
                       min="1"
                       step="1"
@@ -212,20 +214,20 @@ export function OrderEditor({
             修改商品數量會同步調整庫存；取消訂單會補回庫存，恢復訂單時會重新檢查庫存。既有品項保留成立時的單價，新增品項使用目前單價。
           </p>
           <FieldError>{errors.form}</FieldError>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={pending}
-              onClick={onClose}
-            >
-              取消
-            </Button>
-            <Button type="submit" disabled={pending}>
-              {pending ? "儲存中…" : "儲存訂單"}
-            </Button>
-          </DialogFooter>
         </form>
+        <DialogFooter className="shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={onClose}
+          >
+            取消
+          </Button>
+          <Button form="order-editor-form" type="submit" disabled={pending}>
+            {pending ? "儲存中…" : "儲存訂單"}
+          </Button>
+        </DialogFooter>
         {remove !== null && (
           <ConfirmDelete
             title="移除此訂單商品？"

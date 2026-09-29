@@ -46,7 +46,7 @@ async function proxy(
     if (body && body.byteLength > max)
       return Response.json({ message: "資料過大" }, { status: 413 })
     const response = await fetch(
-      `${process.env.INTERNAL_API_BASE_URL || "http://127.0.0.1:7344"}/api/thrift/${path.join("/")}`,
+      `${process.env.INTERNAL_API_BASE_URL || "http://127.0.0.1:7344"}/api/thrift/${path.join("/")}${request.nextUrl.search}`,
       {
         method: request.method,
         headers,

@@ -57,7 +57,7 @@ test("admin upload, catalog, guest checkout, private link, cancellation and mobi
   await expect(shop.getByRole("heading", { name: "訂單詳情" })).toBeVisible()
   const privateLink = shop.url()
   await page.reload()
-  await page.getByRole("tab", { name: "訂單", exact: true }).click()
+  await page.goto("/admin/orders")
   await page.getByLabel("搜尋管理資料").fill(productName)
   await page.getByRole("button", { name: /^編輯訂單 / }).click()
   await page.getByLabel("訂單狀態").click()
@@ -110,7 +110,7 @@ test("category editor, destructive confirmation, account name and dark mode", as
   await page.getByRole("button", { name: "登入", exact: true }).click()
   await expect(page).toHaveURL(/\/$/)
   await page.goto("/admin")
-  await page.getByRole("tab", { name: "分類", exact: true }).click()
+  await page.goto("/admin/categories")
   await page.getByRole("button", { name: "新增分類", exact: true }).click()
   const name = `測試分類-${Date.now()}`
   await page.getByLabel("分類名稱").fill(name)

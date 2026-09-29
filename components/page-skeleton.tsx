@@ -12,7 +12,11 @@ export function PageSkeleton({ list = false }: { list?: boolean }) {
         <Skeleton className="h-10 w-32" />
       </div>
       <div
-        className={list ? "space-y-4" : "grid grid-cols-2 gap-6 lg:grid-cols-3"}
+        className={
+          list
+            ? "space-y-4"
+            : "grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+        }
       >
         {Array.from({ length: 6 }, (_, i) => (
           <div key={i} className="space-y-3">

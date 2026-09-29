@@ -23,11 +23,15 @@ const fontChinese = Noto_Sans_TC({
 })
 
 export const metadata: Metadata = {
-  title: "THRIFT｜二手好物",
-  description: "讓喜歡的物品，繼續被喜歡。探索二手好物，找到剛剛好的下一件。",
+  title: "THRIFT｜二手物品",
+  description:
+    "查看二手商品的照片、狀況和價格。支援訪客下單，付款與交付方式私訊確認。",
   robots: { index: false, follow: false },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "THRIFT" },
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
+  icons: {
+    icon: { url: "/icon.svg?v=logo-1", type: "image/svg+xml" },
+    apple: "/icons/apple-touch-icon.png?v=logo-1",
+  },
 }
 
 export default function RootLayout({
@@ -38,6 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="zh-Hant"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={cn(
         "antialiased",

@@ -60,16 +60,17 @@ export function ProductEditor({
         if (!v && !busy) onClose()
       }}
     >
-      <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[92svh] flex-col overflow-hidden sm:max-w-2xl">
+        <DialogHeader className="shrink-0 pr-6">
           <DialogTitle>{product ? "編輯商品" : "新增商品"}</DialogTitle>
           <DialogDescription>
-            填寫物品狀況並上傳照片，讓下一位主人更了解它。
+            填寫商品資料，並上傳至少一張照片。
           </DialogDescription>
         </DialogHeader>
         <form
+          id="product-editor-form"
           noValidate
-          className="space-y-5"
+          className="-mx-4 min-h-0 space-y-5 overflow-y-auto px-4 py-1"
           onSubmit={(e) => {
             e.preventDefault()
             if (uploading) return
@@ -118,7 +119,6 @@ export function ProductEditor({
           <div className="grid grid-cols-2 gap-4">
             <FormField id="price" label="金額" required error={errors.price}>
               <InputGroup>
-                <InputGroupAddon>NT$</InputGroupAddon>
                 <InputGroupInput
                   id="price"
                   required
@@ -133,6 +133,7 @@ export function ProductEditor({
                     setValues({ ...values, price: e.target.value })
                   }
                 />
+                <InputGroupAddon>NT$</InputGroupAddon>
               </InputGroup>
             </FormField>
             <FormField
@@ -145,6 +146,7 @@ export function ProductEditor({
                 id="quantity"
                 required
                 type="number"
+                inputMode="numeric"
                 min="0"
                 max="99999"
                 step="1"
@@ -234,20 +236,20 @@ export function ProductEditor({
             上架並顯示於物品列表
           </label>
           <FieldError>{errors.form}</FieldError>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={onClose}
-            >
-              取消
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {uploading ? "圖片上傳中…" : pending ? "儲存中…" : "儲存商品"}
-            </Button>
-          </DialogFooter>
         </form>
+        <DialogFooter className="shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={onClose}
+          >
+            取消
+          </Button>
+          <Button form="product-editor-form" type="submit" disabled={busy}>
+            {uploading ? "圖片上傳中…" : pending ? "儲存中…" : "儲存商品"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

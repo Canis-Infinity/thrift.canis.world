@@ -1,8 +1,10 @@
 "use client"
+import { ContactSeller } from "@/components/contact-seller"
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Check, Copy, Minus, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { FieldError } from "@/components/ui/field"
 import { Separator } from "@/components/ui/separator"
@@ -17,11 +19,19 @@ import { PageSkeleton } from "@/components/page-skeleton"
 import { useData } from "@/hooks/use-data"
 import { useForm } from "@/hooks/use-form"
 import { checkoutSchema } from "@/lib/validation"
-import { send } from "@/lib/api"
-import { money, type Catalog, type Order } from "@/lib/types"
+import { ApiError, send } from "@/lib/api"
+import { money, type Product, type Order } from "@/lib/types"
+type CartProduct = Pick<
+  Product,
+  "id" | "name" | "price" | "images" | "quantity" | "active"
+> & { deleted: boolean }
 export function CartPage() {
   const { user, cart, setCart, cartReady, loading: authLoading } = useStore(),
-    { data, loading, error, reload } = useData<Catalog>("/catalog"),
+    { data, loading, error, reload } = useData<{ products: CartProduct[] }>(
+      cartReady
+        ? `/cart-products?ids=${encodeURIComponent(cart.map((item) => item.product).join(","))}`
+        : null
+    ),
     { pending, errors, submit } = useForm()
   const [customer, setCustomer] = useState<Customer>({
       name: "",
@@ -32,7 +42,25 @@ export function CartPage() {
     [order, setOrder] = useState<Order | null>(null)
   const submission = useRef<{ body: string; key: string } | null>(null)
   useEffect(() => {
-    if (user) setCustomer({ name: user.name, contact: user.contact })
+    if (!cartReady || !cart.length || order) return
+    const refresh = () => {
+      if (document.visibilityState === "visible") reload()
+    }
+    window.addEventListener("focus", refresh)
+    document.addEventListener("visibilitychange", refresh)
+    const timer = window.setInterval(refresh, 15000)
+    return () => {
+      window.removeEventListener("focus", refresh)
+      document.removeEventListener("visibilitychange", refresh)
+      window.clearInterval(timer)
+    }
+  }, [cartReady, cart.length, order, reload])
+  useEffect(() => {
+    if (user)
+      setCustomer({
+        name: user.name,
+        contact: user.contact ?? { platform: "LINE", account: "" },
+      })
   }, [user])
   if (loading || !cartReady || authLoading) return <PageSkeleton list />
   if (error)
@@ -47,11 +75,11 @@ export function CartPage() {
         <div className="mx-auto mb-7 flex size-16 items-center justify-center rounded-full bg-muted">
           <Check className="size-7" />
         </div>
-        <p className="text-xs tracking-widest text-muted-foreground">
-          ORDER RECEIVED
-        </p>
         <h1 className="mt-3 text-3xl font-semibold">訂單已成立</h1>
         <p className="mt-4 text-lg">請截圖私訊我訂單編號</p>
+        <div className="mt-4">
+          <ContactSeller />
+        </div>
         <div className="my-8 rounded-xl border p-6">
           <p className="text-sm text-muted-foreground">訂單編號</p>
           <p className="mt-3 font-mono text-xl break-all">{order.number}</p>
@@ -123,32 +151,32 @@ export function CartPage() {
             複製訂單連結
           </Button>
         </div>
-        <Button render={<Link href="/" />}>繼續逛逛</Button>
+        <Button render={<Link href="/" />}>繼續選購</Button>
       </div>
     )
   if (!cart.length)
     return (
       <EmptyState
         title="購物車還空著"
-        description="慢慢逛，把剛好需要的物品帶回來。"
+        description="還沒看到喜歡的？回商品列表再逛逛。"
       >
-        <Button render={<Link href="/" />}>探索物品</Button>
+        <Button render={<Link href="/" />}>商品列表</Button>
       </EmptyState>
     )
   const lines = cart.map((i) => ({
       ...i,
       detail: data?.products.find((p) => p.id === i.product),
     })),
-    invalid = lines.some((i) => !i.detail || i.quantity > i.detail.quantity),
+    invalid = lines.some(
+      (i) =>
+        !i.detail?.active || i.detail.deleted || i.quantity > i.detail.quantity
+    ),
     total = lines.reduce((s, i) => s + (i.detail?.price || 0) * i.quantity, 0)
   function quantity(id: string, n: number) {
     setCart(cart.map((i) => (i.product === id ? { ...i, quantity: n } : i)))
   }
   return (
     <>
-      <p className="text-xs tracking-widest text-muted-foreground">
-        YOUR NEXT FAVORITES
-      </p>
       <h1 className="mt-2 mb-9 text-3xl font-semibold">購物車</h1>
       <div className="grid gap-12 lg:grid-cols-[1.25fr_1fr]">
         <section className="space-y-5">
@@ -162,21 +190,34 @@ export function CartPage() {
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <h2 className="text-sm font-medium">
-                  {i.detail?.name || "商品已下架，請移除"}
+                  {i.detail?.name || "這件商品暫時買不到了"}
                 </h2>
+                {i.detail && (i.detail.deleted || !i.detail.active) && (
+                  <Badge variant="destructive">
+                    {i.detail.deleted ? "已刪除" : "已下架"}
+                  </Badge>
+                )}
                 <p className="font-mono text-sm">
-                  {money(i.detail?.price || 0)}
+                  {i.detail ? money(i.detail.price) : "價格暫時無法取得"}
                 </p>
                 {i.detail && i.quantity > i.detail.quantity && (
-                  <FieldError>
-                    目前剩餘 {i.detail.quantity} 件，請調整數量
-                  </FieldError>
+                  <div className="space-y-2">
+                    <Badge variant="destructive">庫存不足</Badge>
+                    <FieldError>
+                      目前剩餘 {i.detail.quantity} 件，請調整數量
+                    </FieldError>
+                  </div>
                 )}
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="icon-sm"
-                    disabled={pending || i.quantity <= 1}
+                    disabled={
+                      pending ||
+                      !i.detail?.active ||
+                      i.detail.deleted ||
+                      i.quantity <= 1
+                    }
                     aria-label={`減少 ${i.detail?.name} 數量`}
                     onClick={() => quantity(i.product, i.quantity - 1)}
                   >
@@ -189,7 +230,10 @@ export function CartPage() {
                     variant="outline"
                     size="icon-sm"
                     disabled={
-                      pending || !i.detail || i.quantity >= i.detail.quantity
+                      pending ||
+                      !i.detail?.active ||
+                      i.detail.deleted ||
+                      i.quantity >= i.detail.quantity
                     }
                     aria-label={`增加 ${i.detail?.name} 數量`}
                     onClick={() => quantity(i.product, i.quantity + 1)}
@@ -212,7 +256,7 @@ export function CartPage() {
           ))}
           <Button variant="ghost" render={<Link href="/" />}>
             <ArrowLeft />
-            繼續探索
+            繼續選購
           </Button>
         </section>
         <form
@@ -246,7 +290,14 @@ export function CartPage() {
                   "/checkout",
                   "POST",
                   { ...values, key: submission.current!.key }
-                )
+                ).catch((error: unknown) => {
+                  if (
+                    error instanceof ApiError &&
+                    [404, 409].includes(error.status)
+                  )
+                    reload()
+                  throw error
+                })
                 setOrder(result.order)
                 setCart([])
                 submission.current = null
@@ -289,7 +340,9 @@ export function CartPage() {
           </p>
           <FieldError>{errors.items || errors.form}</FieldError>
           {invalid && (
-            <FieldError>部分商品庫存不足或已下架，請先調整購物車。</FieldError>
+            <FieldError>
+              有商品已刪除、下架或數量不夠，調整購物車後就能繼續。
+            </FieldError>
           )}
           <Button
             type="submit"

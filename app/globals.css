@@ -124,6 +124,15 @@
   body {
     @apply bg-background text-foreground;
   }
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
@@ -163,4 +172,20 @@
 .markdown table {
   display: block;
   overflow-x: auto;
+}
+
+/* Toasts must remain above dialog, sheet, and menu portals (z-50). */
+[data-slot="toast-viewport"] {
+  z-index: 100;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

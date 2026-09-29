@@ -26,7 +26,13 @@ npm run create-thrift-admin
 docker compose exec backend npm run create-thrift-admin
 ```
 
-依提示輸入姓名、信箱、手機、聯繫平台／帳號及密碼。密碼至少 12 個字元。此指令不影響 debt 帳號。
+依提示輸入姓名、信箱、手機及密碼，不需要填寫管理員聯繫平台或帳號。密碼至少 12 個字元。顧客可由訂單頁的「聯絡 Canis」前往 <https://link.canis.world>。此指令不影響 debt 帳號。
+
+## 管理導覽
+
+桌面使用 shadcn Base UI Navigation Menu，手機使用 Sidebar。商店管理分為 `/admin/products`（商品）、`/admin/categories`（分類）、`/admin/orders`（訂單）、`/admin/users`（帳號）；`/admin` 會導向商品管理。改名與密碼仍在 `/settings`。
+
+頁內錨點採平滑捲動，並尊重系統「減少動態效果」設定。
 
 ## 開發與檢查
 

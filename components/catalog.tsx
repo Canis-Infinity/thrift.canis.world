@@ -1,4 +1,5 @@
 "use client"
+import { ListPagination, useListPagination } from "@/components/list-pagination"
 import { useMemo, useState } from "react"
 import {
   ArrowDown,
@@ -48,6 +49,10 @@ export function Catalog() {
             : b.createdAt.localeCompare(a.createdAt)
       )
   }, [data, search, category, sort])
+  const pagination = useListPagination(
+    products.length,
+    `${search}:${category}:${sort}`
+  )
   if (loading) return <PageSkeleton />
   if (error)
     return (
@@ -60,20 +65,20 @@ export function Catalog() {
       <section className="relative mb-12 overflow-hidden rounded-2xl bg-muted px-7 py-12 sm:px-12 sm:py-16">
         <div className="relative z-10 max-w-xl">
           <p className="mb-6 text-xs tracking-[.2em] text-muted-foreground">
-            LESS WASTE. MORE STORIES.
+            收藏割愛・二手物品
           </p>
           <h1 className="text-4xl leading-[1.2] font-semibold tracking-tight sm:text-6xl">
-            讓好物，
+            這次割愛，
             <br />
-            遇見下一個日常<span className="text-muted-foreground">。</span>
+            喜歡就帶回家<span className="text-muted-foreground">。</span>
           </h1>
           <p className="mt-6 max-w-sm text-sm leading-7 text-muted-foreground">
-            每件物品都有故事，也值得新的開始。
+            有收藏割愛，也有一些閒置物品。
             <br />
-            在這裡，找到你剛好需要的那一件。
+            確認喜歡再下單，交付方式我們私訊聊。
           </p>
           <Button className="mt-8" render={<a href="#collection" />}>
-            探索所有物品 <ArrowDown className="size-4" />
+            往下逛逛 <ArrowDown className="size-4" />
           </Button>
         </div>
         <div
@@ -83,23 +88,23 @@ export function Catalog() {
           <ArrowUpRight className="size-36 stroke-[.7] text-foreground/20" />
         </div>
         <span className="absolute right-8 bottom-6 text-[10px] tracking-[.2em] text-muted-foreground">
-          THE SECONDHAND COLLECTION
+          SECONDHAND ITEMS
         </span>
       </section>
       <section id="collection" className="scroll-mt-28">
         <div className="mb-7 flex items-end justify-between gap-3">
           <div>
             <p className="text-xs tracking-widest text-muted-foreground">
-              FIND YOUR NEXT FAVORITE
+              所有商品
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">慢慢逛，找到剛剛好</h2>
+            <h2 className="mt-2 text-2xl font-semibold">商品列表</h2>
           </div>
           <span className="shrink-0 text-sm text-muted-foreground">
             {products.length} 件物品
           </span>
         </div>
-        <div className="mb-8 grid gap-3 sm:grid-cols-[1fr_180px_160px]">
-          <InputGroup>
+        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_180px_160px]">
+          <InputGroup className="col-span-2 min-w-0 sm:col-span-1">
             <InputGroupAddon>
               <Search />
             </InputGroupAddon>
@@ -112,6 +117,7 @@ export function Catalog() {
           </InputGroup>
           <AppSelect
             label="商品分類"
+            className="w-full min-w-0"
             value={category}
             onValueChange={setCategory}
             options={[
@@ -124,6 +130,7 @@ export function Catalog() {
           />
           <AppSelect
             label="排序方式"
+            className="w-full min-w-0"
             value={sort}
             onValueChange={setSort}
             options={[
@@ -134,8 +141,8 @@ export function Catalog() {
           />
         </div>
         {products.length ? (
-          <div className="grid grid-cols-2 gap-x-5 gap-y-9 md:gap-x-7 lg:grid-cols-3">
-            {products.map((p, i) => (
+          <div className="grid grid-cols-1 gap-x-5 gap-y-9 md:grid-cols-2 md:gap-x-7 lg:grid-cols-3">
+            {products.slice(pagination.start, pagination.end).map((p, i) => (
               <button
                 key={p.id}
                 type="button"
@@ -169,11 +176,11 @@ export function Catalog() {
           </div>
         ) : (
           <EmptyState
-            title={data?.products.length ? "找不到符合的物品" : "好物準備中"}
+            title={data?.products.length ? "找不到符合的物品" : "架上暫時空了"}
             description={
               data?.products.length
                 ? "試試其他關鍵字或分類。"
-                : "目前還沒有上架的物品，歡迎稍後再來看看。"
+                : "等我整理好下一批東西，再來看看吧。"
             }
           >
             {!!data?.products.length && (
@@ -189,6 +196,7 @@ export function Catalog() {
             )}
           </EmptyState>
         )}
+        <ListPagination {...pagination} />
       </section>
       {selected && (
         <ProductDialog product={selected} onClose={() => setSelected(null)} />

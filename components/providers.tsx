@@ -11,27 +11,32 @@ type Context = {
   loading: boolean
   cart: CartItem[]
   setCart: (cart: CartItem[]) => void
+  isOfflinePage: boolean
+  setIsOfflinePage: (offline: boolean) => void
   cartReady: boolean
 }
 const StoreContext = createContext<Context | null>(null)
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [isOfflinePage, setIsOfflinePage] = useState(false)
   const [user, setUser] = useState<User | null>(null),
     [loading, setLoading] = useState(true),
     [cart, updateCart] = useState<CartItem[]>([]),
     [cartReady, setCartReady] = useState(false)
   useEffect(() => {
     let alive = true
-    api<{ user: User }>("/auth/me")
-      .then((d) => {
-        if (alive) setUser(d.user)
-      })
-      .catch((e) => {
-        if (!(e instanceof ApiError && e.status === 401))
-          toast.add({ title: e.message, type: "error" })
-      })
-      .finally(() => {
-        if (alive) setLoading(false)
-      })
+    if (document.querySelector("[data-offline-page]")) setLoading(false)
+    else
+      api<{ user: User }>("/auth/me")
+        .then((d) => {
+          if (alive) setUser(d.user)
+        })
+        .catch((e) => {
+          if (!(e instanceof ApiError && e.status === 401))
+            toast.add({ title: e.message, type: "error" })
+        })
+        .finally(() => {
+          if (alive) setLoading(false)
+        })
     const expire = () => setUser(null)
     window.addEventListener("thrift-session-expired", expire)
     try {
@@ -71,7 +76,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider>
       <Toaster>
         <StoreContext.Provider
-          value={{ user, setUser, loading, cart, setCart, cartReady }}
+          value={{
+            user,
+            setUser,
+            loading,
+            cart,
+            setCart,
+            cartReady,
+            isOfflinePage,
+            setIsOfflinePage,
+          }}
         >
           {children}
         </StoreContext.Provider>
