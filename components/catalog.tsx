@@ -1,14 +1,23 @@
 "use client"
 import { ListPagination, useListPagination } from "@/components/list-pagination"
 import { useMemo, useState } from "react"
+import { z } from "zod"
 import {
   ArrowDown,
   ArrowUpRight,
+  ChevronDown,
   Search,
   SlidersHorizontal,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import {
   InputGroup,
   InputGroupAddon,
@@ -21,13 +30,116 @@ import { ProductImage } from "@/components/product-image"
 import { ProductDialog } from "@/components/product-dialog"
 import { useData } from "@/hooks/use-data"
 import { money, type Catalog as CatalogData, type Product } from "@/lib/types"
+
+const priceBound = z
+  .string()
+  .trim()
+  .refine(
+    (value) =>
+      value === "" ||
+      (/^\d+$/.test(value) && Number.isSafeInteger(Number(value))),
+    "請輸入 0 以上的新臺幣整數"
+  )
+  .transform((value) => (value === "" ? undefined : Number(value)))
+const priceRangeSchema = z
+  .object({ min: priceBound, max: priceBound })
+  .refine(
+    ({ min, max }) => min === undefined || max === undefined || min <= max,
+    "最高價格不能低於最低價格"
+  )
+
+const filterSchema = z.object({
+  search: z.string(),
+  category: z.string(),
+  sort: z.enum(["new", "low", "high"]),
+  hideSoldOut: z.boolean(),
+  tag: z.string(),
+  price: priceRangeSchema,
+})
+const initialFilters = {
+  search: "",
+  category: "all",
+  sort: "new",
+  hideSoldOut: false,
+  tag: "",
+  price: { min: "", max: "" },
+}
+
 export function Catalog() {
   const { data, loading, error, reload } = useData<CatalogData>("/catalog"),
     [search, setSearch] = useState(""),
     [category, setCategory] = useState("all"),
     [sort, setSort] = useState("new"),
+    [hideSoldOut, setHideSoldOut] = useState(false),
+    [tag, setTag] = useState(""),
+    [priceDraft, setPriceDraft] = useState({ min: "", max: "" }),
+    [applied, setApplied] = useState(() => filterSchema.parse(initialFilters)),
+    [filtersOpen, setFiltersOpen] = useState(false),
+    [priceError, setPriceError] = useState(""),
     [selected, setSelected] = useState<Product | null>(null)
+  const tags = useMemo(
+    () =>
+      [...new Set(data?.products.flatMap((p) => p.tags) || [])].sort((a, b) =>
+        a.localeCompare(b, "zh-TW")
+      ),
+    [data]
+  )
+  const hasFilters = !!(
+    search ||
+    category !== "all" ||
+    tag ||
+    hideSoldOut ||
+    priceDraft.min ||
+    priceDraft.max ||
+    sort !== "new"
+  )
+  const pendingFilters = filterSchema.safeParse({
+    search,
+    category,
+    sort,
+    hideSoldOut,
+    tag,
+    price: priceDraft,
+  })
+  const hasPendingChanges =
+    !pendingFilters.success ||
+    JSON.stringify(pendingFilters.data) !== JSON.stringify(applied)
+  const appliedCount = [
+    applied.search,
+    applied.category !== "all",
+    applied.tag,
+    applied.hideSoldOut,
+    applied.price.min !== undefined || applied.price.max !== undefined,
+    applied.sort !== "new",
+  ].filter(Boolean).length
+  function clearFilters() {
+    setSearch("")
+    setCategory("all")
+    setTag("")
+    setHideSoldOut(false)
+    setPriceDraft({ min: "", max: "" })
+    setSort("new")
+    setPriceError("")
+    setApplied(filterSchema.parse(initialFilters))
+    pagination.onPageChange(1)
+  }
+  function applyFilters() {
+    if (!pendingFilters.success) {
+      setPriceError(pendingFilters.error.issues[0].message)
+      return
+    }
+    setPriceError("")
+    setApplied(pendingFilters.data)
+  }
   const products = useMemo(() => {
+    const {
+      search,
+      category,
+      sort,
+      hideSoldOut,
+      tag,
+      price: priceRange,
+    } = applied
     const cats = new Set([category])
     for (let i = 0; i < 3; i++)
       data?.categories.forEach((c) => {
@@ -36,6 +148,10 @@ export function Catalog() {
     return (data?.products || [])
       .filter(
         (p) =>
+          (!hideSoldOut || p.quantity > 0) &&
+          (!tag || p.tags.includes(tag)) &&
+          (priceRange.min === undefined || p.price >= priceRange.min) &&
+          (priceRange.max === undefined || p.price <= priceRange.max) &&
           (category === "all" || (p.category && cats.has(p.category))) &&
           `${p.name} ${p.tags.join(" ")} ${p.description}`
             .toLowerCase()
@@ -48,11 +164,8 @@ export function Catalog() {
             ? b.price - a.price
             : b.createdAt.localeCompare(a.createdAt)
       )
-  }, [data, search, category, sort])
-  const pagination = useListPagination(
-    products.length,
-    `${search}:${category}:${sort}`
-  )
+  }, [data, applied])
+  const pagination = useListPagination(products.length, JSON.stringify(applied))
   if (loading) return <PageSkeleton />
   if (error)
     return (
@@ -103,50 +216,181 @@ export function Catalog() {
             {products.length} 件物品
           </span>
         </div>
-        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_180px_160px]">
-          <InputGroup className="col-span-2 min-w-0 sm:col-span-1">
-            <InputGroupAddon>
-              <Search />
-            </InputGroupAddon>
-            <InputGroupInput
-              aria-label="搜尋物品"
-              placeholder="搜尋物品名稱、標籤…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </InputGroup>
-          <AppSelect
-            label="商品分類"
-            className="w-full min-w-0"
-            value={category}
-            onValueChange={setCategory}
-            options={[
-              { value: "all", label: "所有分類", icon: SlidersHorizontal },
-              ...(data?.categories || []).map((c) => ({
-                value: c.id,
-                label: categoryLabel(c.id, data?.categories || []),
-              })),
-            ]}
-          />
-          <AppSelect
-            label="排序方式"
-            className="w-full min-w-0"
-            value={sort}
-            onValueChange={setSort}
-            options={[
-              { value: "new", label: "最新上架" },
-              { value: "low", label: "價格：低到高" },
-              { value: "high", label: "價格：高到低" },
-            ]}
-          />
-        </div>
+        <Collapsible
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          className="mb-8"
+          role="region"
+          aria-label="商品篩選"
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <CollapsibleTrigger render={<Button variant="outline" />}>
+              <SlidersHorizontal />
+              篩選條件
+              {appliedCount > 0 && (
+                <Badge variant="secondary">{appliedCount}</Badge>
+              )}
+              <ChevronDown className={filtersOpen ? "rotate-180" : ""} />
+            </CollapsibleTrigger>
+            {hasPendingChanges && (
+              <span className="text-sm text-muted-foreground">
+                條件已修改，尚未套用
+              </span>
+            )}
+          </div>
+          <CollapsibleContent>
+            <form
+              className="space-y-5 pt-5"
+              noValidate
+              onSubmit={(event) => {
+                event.preventDefault()
+                applyFilters()
+              }}
+            >
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px]">
+                <Field>
+                  <FieldLabel htmlFor="catalog-search">搜尋商品</FieldLabel>
+                  <InputGroup>
+                    <InputGroupInput
+                      id="catalog-search"
+                      aria-label="搜尋物品"
+                      placeholder="搜尋物品名稱、標籤…"
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                    />
+                    <InputGroupAddon>
+                      <Search />
+                    </InputGroupAddon>
+                  </InputGroup>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="catalog-sort">排序</FieldLabel>
+                  <AppSelect
+                    id="catalog-sort"
+                    label="排序方式"
+                    className="w-full min-w-0"
+                    value={sort}
+                    onValueChange={setSort}
+                    options={[
+                      { value: "new", label: "最新上架" },
+                      { value: "low", label: "價格：低到高" },
+                      { value: "high", label: "價格：高到低" },
+                    ]}
+                  />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
+                <Field className="min-w-0">
+                  <FieldLabel htmlFor="catalog-category">分類</FieldLabel>
+                  <AppSelect
+                    id="catalog-category"
+                    label="商品分類"
+                    className="w-full min-w-0"
+                    value={category}
+                    onValueChange={setCategory}
+                    options={[
+                      {
+                        value: "all",
+                        label: "所有分類",
+                        icon: SlidersHorizontal,
+                      },
+                      ...(data?.categories || []).map((c) => ({
+                        value: c.id,
+                        label: categoryLabel(c.id, data?.categories || []),
+                      })),
+                    ]}
+                  />
+                </Field>
+                <Field className="min-w-0">
+                  <FieldLabel htmlFor="catalog-tag">標籤</FieldLabel>
+                  <AppSelect
+                    id="catalog-tag"
+                    label="商品標籤"
+                    className="w-full min-w-0"
+                    value={tag}
+                    onValueChange={setTag}
+                    disabled={!tags.length}
+                    options={[
+                      { value: "", label: "所有標籤" },
+                      ...tags.map((value) => ({ value, label: value })),
+                    ]}
+                  />
+                </Field>
+                <div className="col-span-2 min-w-0 lg:col-span-1">
+                  <Field>
+                    <FieldLabel htmlFor="catalog-price-min">
+                      價格範圍
+                    </FieldLabel>
+                    <div className="grid grid-cols-2 gap-3">
+                      {(["min", "max"] as const).map((bound) => (
+                        <InputGroup key={bound}>
+                          <InputGroupInput
+                            id={`catalog-price-${bound}`}
+                            aria-label={
+                              bound === "min" ? "最低價格" : "最高價格"
+                            }
+                            placeholder={
+                              bound === "min" ? "最低價格" : "最高價格"
+                            }
+                            inputMode="numeric"
+                            className="min-w-0 font-mono"
+                            value={priceDraft[bound]}
+                            aria-invalid={!!priceError}
+                            aria-describedby={
+                              priceError ? "price-filter-error" : undefined
+                            }
+                            onChange={(event) =>
+                              setPriceDraft((current) => ({
+                                ...current,
+                                [bound]: event.target.value,
+                              }))
+                            }
+                          />
+                          <InputGroupAddon>NT$</InputGroupAddon>
+                        </InputGroup>
+                      ))}
+                    </div>
+                    {priceError && (
+                      <FieldError id="price-filter-error">
+                        {priceError}
+                      </FieldError>
+                    )}
+                  </Field>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <Field orientation="horizontal" className="w-auto">
+                  <Checkbox
+                    id="catalog-in-stock"
+                    checked={hideSoldOut}
+                    onCheckedChange={setHideSoldOut}
+                  />
+                  <FieldLabel htmlFor="catalog-in-stock">只看有貨</FieldLabel>
+                </Field>
+                <div className="grid grid-cols-2 gap-3 sm:flex">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!hasFilters && appliedCount === 0}
+                    onClick={clearFilters}
+                  >
+                    重設條件
+                  </Button>
+                  <Button type="submit" disabled={!hasPendingChanges}>
+                    套用篩選
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </CollapsibleContent>
+        </Collapsible>
         {products.length ? (
           <div className="grid grid-cols-1 gap-x-5 gap-y-9 md:grid-cols-2 md:gap-x-7 lg:grid-cols-3">
             {products.slice(pagination.start, pagination.end).map((p, i) => (
               <button
                 key={p.id}
                 type="button"
-                className="group min-w-0 text-left outline-offset-4"
+                className={`group min-w-0 text-left outline-offset-4 ${p.quantity <= 0 ? "opacity-50" : ""}`}
                 onClick={() => setSelected(p)}
               >
                 <ProductImage id={p.images[0]} name={p.name} priority={i < 3} />
@@ -179,19 +423,13 @@ export function Catalog() {
             title={data?.products.length ? "找不到符合的物品" : "架上暫時空了"}
             description={
               data?.products.length
-                ? "試試其他關鍵字或分類。"
+                ? "換個關鍵字或調整篩選條件試試。"
                 : "等我整理好下一批東西，再來看看吧。"
             }
           >
             {!!data?.products.length && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearch("")
-                  setCategory("all")
-                }}
-              >
-                清除篩選
+              <Button variant="outline" onClick={() => setFiltersOpen(true)}>
+                調整篩選
               </Button>
             )}
           </EmptyState>

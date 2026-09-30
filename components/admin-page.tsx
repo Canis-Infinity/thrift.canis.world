@@ -74,10 +74,35 @@ export function AdminPage({ section }: { section: keyof typeof sections }) {
     )
   return (
     <>
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="mt-2 text-3xl font-semibold">{sectionInfo.title}</h1>
-        </div>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-semibold">{sectionInfo.title}</h1>
+        {section === "products" && (
+          <Button
+            className="shrink-0"
+            onClick={() => setEditor({ type: "product" })}
+          >
+            <Plus />
+            新增商品
+          </Button>
+        )}
+        {section === "categories" && (
+          <Button
+            className="shrink-0"
+            onClick={() => setEditor({ type: "category" })}
+          >
+            <Plus />
+            新增分類
+          </Button>
+        )}
+        {section === "orders" && (
+          <Button
+            className="shrink-0"
+            onClick={() => setEditor({ type: "order" })}
+          >
+            <Plus />
+            新增訂單
+          </Button>
+        )}
       </div>
       <div className="mb-6">
         <Input
@@ -90,12 +115,6 @@ export function AdminPage({ section }: { section: keyof typeof sections }) {
       </div>
       {section === "products" && (
         <section aria-label={sectionInfo.title}>
-          <div className="mb-5 flex justify-end">
-            <Button onClick={() => setEditor({ type: "product" })}>
-              <Plus />
-              新增商品
-            </Button>
-          </div>
           {!products.length ? (
             <EmptyState title="尚無商品" />
           ) : (
@@ -218,12 +237,6 @@ export function AdminPage({ section }: { section: keyof typeof sections }) {
       )}
       {section === "categories" && (
         <section aria-label={sectionInfo.title}>
-          <div className="mb-5 flex justify-end">
-            <Button onClick={() => setEditor({ type: "category" })}>
-              <Plus />
-              新增分類
-            </Button>
-          </div>
           {!categories.length ? (
             <EmptyState title="尚無分類" />
           ) : (
@@ -303,12 +316,6 @@ export function AdminPage({ section }: { section: keyof typeof sections }) {
       )}
       {section === "orders" && (
         <section aria-label={sectionInfo.title}>
-          <div className="mb-5 flex justify-end">
-            <Button onClick={() => setEditor({ type: "order" })}>
-              <Plus />
-              新增訂單
-            </Button>
-          </div>
           {!orders.length ? (
             <EmptyState title="尚無訂單" />
           ) : (
