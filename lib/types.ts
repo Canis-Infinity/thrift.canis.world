@@ -1,5 +1,5 @@
 export type Contact = {
-  platform: "IG" | "LINE" | "facebook" | "Discord"
+  platform: "IG" | "LINE" | "facebook" | "Discord" | "Threads"
   account: string
 }
 export type User = {
@@ -61,7 +61,9 @@ export const statuses = {
   completed: "已完成",
   cancelled: "已取消",
 }
-export const platforms = ["IG", "LINE", "facebook", "Discord"].map((value) => ({
-  value,
-  label: value,
-}))
+export const platforms = ["IG", "LINE", "facebook", "Discord", "Threads"].map(
+  (value) => ({
+    value,
+    label: value,
+  })
+)

@@ -6,7 +6,7 @@ const password = z
   .max(72, "密碼最多 72 個字元")
   .refine((v) => new TextEncoder().encode(v).length <= 72, "密碼最多 72 bytes")
 export const contactSchema = z.object({
-  platform: z.enum(["IG", "LINE", "facebook", "Discord"]),
+  platform: z.enum(["IG", "LINE", "facebook", "Discord", "Threads"]),
   account: z.string().trim().min(1, "請輸入聯繫帳號").max(200),
 })
 export const customerSchema = z.object({ name, contact: contactSchema })
