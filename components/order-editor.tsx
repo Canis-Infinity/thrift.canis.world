@@ -16,6 +16,7 @@ import { FieldError } from "@/components/ui/field"
 import { FormField } from "@/components/form-field"
 import { CustomerFields, type Customer } from "@/components/customer-fields"
 import { AppSelect } from "@/components/app-select"
+import { ProductImage } from "@/components/product-image"
 import { ConfirmDelete } from "@/components/confirm-delete"
 import { useForm } from "@/hooks/use-form"
 import { orderSchema } from "@/lib/validation"
@@ -59,6 +60,12 @@ export function OrderEditor({
       .filter((i) => !products.some((p) => p.id === i.product))
       .map((i) => ({ value: i.product, label: `${i.name}（已刪除）` })) || []),
   ]
+  const productImages = new Map(
+    order?.items.map((i) => [i.product, i.image ?? undefined])
+  )
+  for (const product of products)
+    productImages.set(product.id, product.images[0])
+  const imageFor = (id: string) => productImages.get(id)
   return (
     <Dialog
       open
@@ -115,52 +122,85 @@ export function OrderEditor({
             {items.map((item, index) => (
               <div key={index} className="space-y-2">
                 <div className="grid grid-cols-[minmax(0,1fr)_76px_32px] items-end gap-2">
-                  <FormField
-                    id={`item-${index}`}
-                    label={`商品 ${index + 1}`}
-                    required
-                    error={errors[`items.${index}.product`]}
-                  >
-                    <AppSelect
+                  <div className="col-span-3 min-w-0 sm:col-span-1">
+                    <FormField
                       id={`item-${index}`}
+                      label={`商品 ${index + 1}`}
                       required
-                      value={item.product}
-                      options={options}
-                      onValueChange={(product) =>
-                        setItems(
-                          items.map((v, i) =>
-                            i === index ? { ...v, product } : v
-                          )
-                        )
-                      }
-                      className="w-full min-w-0"
-                    />
-                  </FormField>
-                  <FormField
-                    id={`count-${index}`}
-                    label="數量"
-                    required
-                    error={errors[`items.${index}.quantity`]}
-                  >
-                    <Input
+                      error={errors[`items.${index}.product`]}
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        {item.product && (
+                          <ProductImage
+                            key={imageFor(item.product)}
+                            id={imageFor(item.product)}
+                            name={
+                              options.find((o) => o.value === item.product)
+                                ?.label || "商品"
+                            }
+                            thumbnail
+                          />
+                        )}
+                        <AppSelect
+                          id={`item-${index}`}
+                          required
+                          value={item.product}
+                          options={options}
+                          renderOption={(option) =>
+                            option.value ? (
+                              <span className="flex min-w-0 items-center gap-2">
+                                <ProductImage
+                                  id={imageFor(option.value)}
+                                  name={option.label}
+                                  thumbnail
+                                />
+                                <span className="min-w-0 break-words whitespace-normal">
+                                  {option.label}
+                                </span>
+                              </span>
+                            ) : (
+                              option.label
+                            )
+                          }
+                          onValueChange={(product) =>
+                            setItems(
+                              items.map((v, i) =>
+                                i === index ? { ...v, product } : v
+                              )
+                            )
+                          }
+                          className="w-full min-w-0"
+                        />
+                      </div>
+                    </FormField>
+                  </div>
+                  <div className="col-start-2 min-w-0">
+                    <FormField
                       id={`count-${index}`}
-                      type="number"
-                      inputMode="numeric"
+                      label="數量"
                       required
-                      min="1"
-                      step="1"
-                      value={item.quantity || ""}
-                      onChange={(e) =>
-                        setItems(
-                          items.map((v, i) =>
-                            i === index
-                              ? { ...v, quantity: Number(e.target.value) }
-                              : v
+                      error={errors[`items.${index}.quantity`]}
+                    >
+                      <Input
+                        id={`count-${index}`}
+                        type="number"
+                        inputMode="numeric"
+                        required
+                        min="1"
+                        step="1"
+                        value={item.quantity || ""}
+                        onChange={(e) =>
+                          setItems(
+                            items.map((v, i) =>
+                              i === index
+                                ? { ...v, quantity: Number(e.target.value) }
+                                : v
+                            )
                           )
-                        )
-                      }
-                    />
-                  </FormField>
+                        }
+                      />
+                    </FormField>
+                  </div>
                   <Button
                     type="button"
                     variant="ghost"

@@ -1,6 +1,7 @@
 "use client"
 
 import type { LucideIcon } from "lucide-react"
+import type { ReactNode } from "react"
 import {
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ export function AppSelect({
   invalid,
   describedBy,
   className,
+  renderOption,
 }: {
   id?: string
   label?: string
@@ -33,6 +35,7 @@ export function AppSelect({
   invalid?: boolean
   describedBy?: string
   className?: string
+  renderOption?: (option: Option) => ReactNode
 }) {
   const selected = options.find((option) => option.value === value)
   const Icon = selected?.icon
@@ -59,12 +62,30 @@ export function AppSelect({
           {selected?.label}
         </SelectValue>
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent
+        alignItemWithTrigger={!renderOption}
+        align={renderOption ? "start" : "center"}
+        className={renderOption ? "w-80 max-w-[calc(100vw-2rem)]" : undefined}
+      >
         <SelectGroup>
           {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.icon && <option.icon aria-hidden="true" />}
-              {option.label}
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              className={
+                renderOption
+                  ? "[&>span:first-child]:min-w-0 [&>span:first-child]:shrink"
+                  : undefined
+              }
+            >
+              {renderOption ? (
+                renderOption(option)
+              ) : (
+                <>
+                  {option.icon && <option.icon aria-hidden="true" />}
+                  {option.label}
+                </>
+              )}
             </SelectItem>
           ))}
         </SelectGroup>
