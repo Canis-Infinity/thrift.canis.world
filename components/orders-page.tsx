@@ -1,6 +1,7 @@
 "use client"
 import { ListPagination, useListPagination } from "@/components/list-pagination"
 import { ContactSeller } from "@/components/contact-seller"
+import { OrderItems } from "@/components/order-items"
 import Link from "next/link"
 import { useStore } from "@/components/providers"
 import { useData } from "@/hooks/use-data"
@@ -53,19 +54,7 @@ export function OrdersPage() {
                   </span>
                 </div>
                 <div className="my-4 space-y-2">
-                  {order.items.map((item) => (
-                    <div
-                      key={item.product}
-                      className="flex justify-between gap-3 text-sm"
-                    >
-                      <span>
-                        {item.name} × {item.quantity}
-                      </span>
-                      <span className="font-mono">
-                        {money(item.price * item.quantity)}
-                      </span>
-                    </div>
-                  ))}
+                  <OrderItems items={order.items} />
                 </div>
                 <p className="text-right font-mono">{money(order.total)}</p>
                 <p className="mt-4 text-sm text-muted-foreground">

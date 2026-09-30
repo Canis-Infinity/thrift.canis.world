@@ -1,5 +1,6 @@
 "use client"
 import { ContactSeller } from "@/components/contact-seller"
+import { OrderItems } from "@/components/order-items"
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Check, Copy, Minus, Plus, Trash2 } from "lucide-react"
@@ -102,17 +103,7 @@ export function CartPage() {
             複製編號
           </Button>
           <Separator className="my-5" />
-          {order.items.map((i) => (
-            <div
-              key={i.product}
-              className="mb-2 flex justify-between gap-4 text-left text-sm"
-            >
-              <span>
-                {i.name} × {i.quantity}
-              </span>
-              <span className="font-mono">{money(i.price * i.quantity)}</span>
-            </div>
-          ))}
+          <OrderItems items={order.items} />
           <div className="mt-5 flex justify-between font-medium">
             <span>商品合計</span>
             <span className="font-mono">{money(order.total)}</span>

@@ -33,6 +33,7 @@ export type Category = {
 }
 export type OrderItem = {
   product: string
+  image?: string | null
   name: string
   price: number
   quantity: number

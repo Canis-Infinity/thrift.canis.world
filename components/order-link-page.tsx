@@ -1,5 +1,6 @@
 "use client"
 import { ContactSeller } from "@/components/contact-seller"
+import { OrderItems } from "@/components/order-items"
 import { useData } from "@/hooks/use-data"
 import { PageSkeleton } from "@/components/page-skeleton"
 import { EmptyState } from "@/components/empty-state"
@@ -27,14 +28,7 @@ export function OrderLinkPage({ token }: { token: string }) {
       <p className="mb-4 font-mono break-all">{order.number}</p>
       <Badge variant="secondary">{statuses[order.status]}</Badge>
       <div className="my-8 space-y-4 border-y py-6">
-        {order.items.map((i) => (
-          <div key={i.product} className="flex justify-between gap-4">
-            <span>
-              {i.name} × {i.quantity}
-            </span>
-            <span className="font-mono">{money(i.price * i.quantity)}</span>
-          </div>
-        ))}
+        <OrderItems items={order.items} />
       </div>
       <p className="text-right font-mono text-xl">合計 {money(order.total)}</p>
       <p className="mt-8">請截圖私訊我訂單編號</p>
