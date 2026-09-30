@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ProductImage } from "@/components/product-image"
+import { ProductImageViewer } from "@/components/product-image-viewer"
 import { useStore } from "@/components/providers"
 import { api } from "@/lib/api"
 import { mutation } from "@/lib/notifications"
@@ -95,6 +95,7 @@ export function ProductDialog({
         ])
         setQuantityError("")
       })
+      onClose()
     } catch {
     } finally {
       checkingRef.current = false
@@ -117,11 +118,11 @@ export function ProductDialog({
         </DialogHeader>
         <div className="-mx-4 grid min-h-0 gap-6 overflow-y-auto px-4 py-1 md:grid-cols-2">
           <div>
-            <ProductImage
-              key={product.images[selected]}
-              id={product.images[selected]}
+            <ProductImageViewer
+              images={product.images}
               name={product.name}
-              sizes="(max-width:767px) calc(100vw - 64px), 356px"
+              selected={selected}
+              onSelect={setSelected}
             />
             {product.images.length > 1 && (
               <div className="mt-3 flex flex-wrap gap-2">

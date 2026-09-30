@@ -52,6 +52,9 @@ test("選擇加入數量並以購物車累計數量檢查最新庫存", async ({
       )
     )
     .toBe(2)
+  await expect(dialog).toBeHidden()
+  await page.getByRole("button", { name: /測試物品/ }).click()
+  await input.fill("2")
   stock = 3
   await dialog.getByRole("button", { name: "加入購物車", exact: true }).click()
   await expect(dialog.getByText(/這次最多可加入 1 件/)).toBeVisible()
@@ -73,6 +76,7 @@ test("選擇加入數量並以購物車累計數量檢查最新庫存", async ({
       )
     )
     .toBe(3)
+  await expect(dialog).toBeHidden()
 })
 
 test("回到購物車更新已刪除註記，保留商品資料並禁止結帳", async ({ page }) => {
@@ -215,6 +219,8 @@ test("加入購物車重新確認庫存，結帳失敗更新剩餘數量", async
   await expect(page.locator('[data-slot="toast"]')).toContainText(
     "已加入購物車"
   )
+  await expect(page.getByRole("dialog", { name: product.name })).toBeHidden()
+  await page.getByRole("button", { name: /測試物品/ }).click()
   await page.getByRole("button", { name: "加入購物車", exact: true }).click()
   await expect(
     page.locator('[data-slot="toast"]').filter({ hasText: "購物車已有 1 件" })

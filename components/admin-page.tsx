@@ -24,6 +24,7 @@ import { CategoryEditor } from "@/components/category-editor"
 import { OrderEditor } from "@/components/order-editor"
 import { categoryLabel } from "@/lib/categories"
 import { send } from "@/lib/api"
+import { scrollPageToTop } from "@/lib/scroll"
 import { mutation } from "@/lib/notifications"
 import {
   statuses,
@@ -120,7 +121,10 @@ export function AdminPage({ section }: { section: keyof typeof sections }) {
           product={editor.value}
           categories={data.categories}
           onClose={() => setEditor(null)}
-          onSaved={reload}
+          onSaved={() => {
+            reload()
+            if (!editor.value) scrollPageToTop("smooth")
+          }}
         />
       )}{" "}
       {editor?.type === "category" && (
@@ -128,7 +132,10 @@ export function AdminPage({ section }: { section: keyof typeof sections }) {
           category={editor.value}
           categories={data.categories}
           onClose={() => setEditor(null)}
-          onSaved={reload}
+          onSaved={() => {
+            reload()
+            if (!editor.value) scrollPageToTop("smooth")
+          }}
         />
       )}{" "}
       {editor?.type === "order" && (
@@ -136,7 +143,10 @@ export function AdminPage({ section }: { section: keyof typeof sections }) {
           order={editor.value}
           products={data.products}
           onClose={() => setEditor(null)}
-          onSaved={reload}
+          onSaved={() => {
+            reload()
+            if (!editor.value) scrollPageToTop("smooth")
+          }}
         />
       )}{" "}
       {deletion && (

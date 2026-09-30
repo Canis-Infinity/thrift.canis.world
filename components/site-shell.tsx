@@ -1,5 +1,6 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { scrollPageToTop } from "@/lib/scroll"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -351,6 +352,9 @@ function Navigation() {
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const path = usePathname()
   const { isOfflinePage } = useStore()
+  useEffect(() => {
+    if (!window.location.hash) return scrollPageToTop()
+  }, [path])
   return (
     <SidebarProvider defaultOpen={false} className="block min-h-svh">
       <Navigation />
