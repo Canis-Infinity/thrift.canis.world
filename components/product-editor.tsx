@@ -1,7 +1,15 @@
 "use client"
 import { useState } from "react"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
+import dynamic from "next/dynamic"
+import { Skeleton } from "@/components/ui/skeleton"
+const MarkdownContent = dynamic(() => import("@/components/markdown-content"), {
+  loading: () => (
+    <div role="status" aria-label="載入商品說明" className="space-y-2">
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-3/4" />
+    </div>
+  ),
+})
 import {
   Dialog,
   DialogContent,
@@ -24,7 +32,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { FormField } from "@/components/form-field"
 import { AppSelect } from "@/components/app-select"
 import { ImageUpload } from "@/components/image-upload"
-import { categoryLabel } from "@/components/catalog"
+import { categoryLabel } from "@/lib/categories"
 import { useForm } from "@/hooks/use-form"
 import { productSchema } from "@/lib/validation"
 import { send } from "@/lib/api"
@@ -208,9 +216,9 @@ export function ProductEditor({
               </TabsContent>
               <TabsContent value="preview">
                 <div className="markdown min-h-36 rounded-lg border p-4 text-sm">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <MarkdownContent>
                     {values.description || "尚未填寫商品說明。"}
-                  </ReactMarkdown>
+                  </MarkdownContent>
                 </div>
               </TabsContent>
             </Tabs>

@@ -8,11 +8,13 @@ export function ProductImage({
   name,
   priority = false,
   thumbnail = false,
+  sizes = "(max-width:767px) calc(100vw - 40px), (max-width:1023px) calc((100vw - 92px) / 2), (max-width:1279px) calc((100vw - 120px) / 3), 387px",
 }: {
   id?: string
   name: string
   priority?: boolean
   thumbnail?: boolean
+  sizes?: string
 }) {
   const [loaded, setLoaded] = useState(false),
     [failed, setFailed] = useState(false)
@@ -31,12 +33,7 @@ export function ProductImage({
             src={`/api/thrift/images/${id}`}
             alt={name}
             fill
-            sizes={
-              thumbnail
-                ? "56px"
-                : "(max-width:767px) 100vw, (max-width:1023px) 50vw, 33vw"
-            }
-            unoptimized
+            sizes={thumbnail ? "56px" : sizes}
             priority={priority}
             onLoad={() => setLoaded(true)}
             onError={() => setFailed(true)}

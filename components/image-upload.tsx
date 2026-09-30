@@ -101,7 +101,11 @@ export function ImageUpload({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {images.map((id, i) => (
           <div key={id}>
-            <ProductImage id={id} name={`商品照片 ${i + 1}`} />
+            <ProductImage
+              id={id}
+              name={`商品照片 ${i + 1}`}
+              sizes="(max-width:639px) calc((100vw - 76px) / 2), 206px"
+            />
             <div className="mt-2 flex items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">
                 {i === 0 ? "封面照片" : `照片 ${i + 1}`}

@@ -76,6 +76,9 @@ test("選擇加入數量並以購物車累計數量檢查最新庫存", async ({
 })
 
 test("回到購物車更新已刪除註記，保留商品資料並禁止結帳", async ({ page }) => {
+  await page.route("**/_next/image?**", (route) =>
+    route.fulfill({ path: "public/icons/icon-192.png" })
+  )
   let deleted = false
   await page.addInitScript(() =>
     localStorage.setItem(
@@ -121,6 +124,9 @@ test("回到購物車更新已刪除註記，保留商品資料並禁止結帳",
 })
 
 test("結帳失敗保留商品資料，同時標示下架與庫存不足", async ({ page }) => {
+  await page.route("**/_next/image?**", (route) =>
+    route.fulfill({ path: "public/icons/icon-192.png" })
+  )
   let unavailable = false
   await page.addInitScript(() =>
     localStorage.setItem(

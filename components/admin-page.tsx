@@ -1,7 +1,13 @@
 "use client"
 import { DataTable } from "@/components/data-table"
 import Link from "next/link"
-import { useState } from "react"
+import {
+  memo,
+  useDeferredValue,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useStore } from "@/components/providers"
 import { useData } from "@/hooks/use-data"
@@ -16,7 +22,7 @@ import { ProductImage } from "@/components/product-image"
 import { ProductStatusButton } from "@/components/product-status-button"
 import { CategoryEditor } from "@/components/category-editor"
 import { OrderEditor } from "@/components/order-editor"
-import { categoryLabel } from "@/components/catalog"
+import { categoryLabel } from "@/lib/categories"
 import { send } from "@/lib/api"
 import { mutation } from "@/lib/notifications"
 import {
@@ -39,25 +45,13 @@ const sections = {
 export function AdminPage({ section }: { section: keyof typeof sections }) {
   const { user, loading: authLoading } = useStore(),
     { data, loading, error, reload } = useData<AdminData>(
-      user?.role === "admin" ? "/admin/data" : null
+      user?.role === "admin" ? `/admin/data?section=${section}` : null
     ),
     [editor, setEditor] = useState<Editor | null>(null),
-    [deletion, setDeletion] = useState<{
-      path: string
-      version: number
-      title: string
-      description?: string
-    } | null>(null),
-    [search, setSearch] = useState(""),
-    [busy, setBusy] = useState(false)
+    [deletion, setDeletion] = useState<Deletion | null>(null),
+    [search, setSearch] = useState("")
+  const deferredSearch = useDeferredValue(search)
   const sectionInfo = sections[section]
-  const matches = (s: string) => s.toLowerCase().includes(search.toLowerCase()),
-    products = (data?.products || []).filter((p) => matches(p.name)),
-    categories = (data?.categories || []).filter((c) => matches(c.name)),
-    orders = (data?.orders || []).filter((o) =>
-      matches(`${o.number} ${o.customer.name} ${o.customer.contact.account}`)
-    ),
-    users = (data?.users || []).filter((u) => matches(`${u.name} ${u.email}`))
   if (authLoading || (user?.role === "admin" && loading))
     return <PageSkeleton list />
   if (user?.role !== "admin")
@@ -113,6 +107,101 @@ export function AdminPage({ section }: { section: keyof typeof sections }) {
           className="sm:max-w-xs"
         />
       </div>
+      <AdminListings
+        section={section}
+        data={data}
+        search={deferredSearch}
+        setEditor={setEditor}
+        setDeletion={setDeletion}
+        reload={reload}
+      />
+      {editor?.type === "product" && (
+        <ProductEditor
+          product={editor.value}
+          categories={data.categories}
+          onClose={() => setEditor(null)}
+          onSaved={reload}
+        />
+      )}{" "}
+      {editor?.type === "category" && (
+        <CategoryEditor
+          category={editor.value}
+          categories={data.categories}
+          onClose={() => setEditor(null)}
+          onSaved={reload}
+        />
+      )}{" "}
+      {editor?.type === "order" && (
+        <OrderEditor
+          order={editor.value}
+          products={data.products}
+          onClose={() => setEditor(null)}
+          onSaved={reload}
+        />
+      )}{" "}
+      {deletion && (
+        <ConfirmDelete
+          title={deletion.title}
+          description={deletion.description}
+          onClose={() => setDeletion(null)}
+          onConfirm={async () => {
+            await send(`/admin/${deletion.path}`, "DELETE", {
+              version: deletion.version,
+            })
+            reload()
+          }}
+        />
+      )}
+    </>
+  )
+}
+
+type Deletion = {
+  path: string
+  version: number
+  title: string
+  description?: string
+}
+// Dialog state stays above this boundary: opening an editor must not rebuild all rows.
+const AdminListings = memo(function AdminListings({
+  section,
+  data,
+  search,
+  setEditor,
+  setDeletion,
+  reload,
+}: {
+  section: keyof typeof sections
+  data: AdminData
+  search: string
+  setEditor: Dispatch<SetStateAction<Editor | null>>
+  setDeletion: Dispatch<SetStateAction<Deletion | null>>
+  reload: () => void
+}) {
+  const [busy, setBusy] = useState(false)
+  const sectionInfo = sections[section]
+  const query = search.toLowerCase()
+  const matches = (value: string) => value.toLowerCase().includes(query)
+  const products =
+    section === "products" ? data.products.filter((p) => matches(p.name)) : []
+  const categories =
+    section === "categories"
+      ? data.categories.filter((c) => matches(c.name))
+      : []
+  const orders =
+    section === "orders"
+      ? data.orders.filter((o) =>
+          matches(
+            `${o.number} ${o.customer.name} ${o.customer.contact.account}`
+          )
+        )
+      : []
+  const users =
+    section === "users"
+      ? data.users.filter((u) => matches(`${u.name} ${u.email}`))
+      : []
+  return (
+    <>
       {section === "products" && (
         <section aria-label={sectionInfo.title}>
           {!products.length ? (
@@ -566,43 +655,6 @@ export function AdminPage({ section }: { section: keyof typeof sections }) {
           )}
         </section>
       )}
-      {editor?.type === "product" && (
-        <ProductEditor
-          product={editor.value}
-          categories={data.categories}
-          onClose={() => setEditor(null)}
-          onSaved={reload}
-        />
-      )}{" "}
-      {editor?.type === "category" && (
-        <CategoryEditor
-          category={editor.value}
-          categories={data.categories}
-          onClose={() => setEditor(null)}
-          onSaved={reload}
-        />
-      )}{" "}
-      {editor?.type === "order" && (
-        <OrderEditor
-          order={editor.value}
-          products={data.products}
-          onClose={() => setEditor(null)}
-          onSaved={reload}
-        />
-      )}{" "}
-      {deletion && (
-        <ConfirmDelete
-          title={deletion.title}
-          description={deletion.description}
-          onClose={() => setDeletion(null)}
-          onConfirm={async () => {
-            await send(`/admin/${deletion.path}`, "DELETE", {
-              version: deletion.version,
-            })
-            reload()
-          }}
-        />
-      )}
     </>
   )
-}
+})

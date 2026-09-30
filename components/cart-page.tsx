@@ -184,6 +184,7 @@ export function CartPage() {
             <div key={i.product} className="flex gap-4 border-b pb-5">
               <div className="w-24 shrink-0 sm:w-36">
                 <ProductImage
+                  sizes="(max-width:639px) 96px, 144px"
                   id={i.detail?.images[0]}
                   name={i.detail?.name || "已下架商品"}
                 />

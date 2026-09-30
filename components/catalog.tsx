@@ -1,6 +1,6 @@
 "use client"
 import { ListPagination, useListPagination } from "@/components/list-pagination"
-import { useMemo, useState } from "react"
+import { memo, useMemo, useState } from "react"
 import { z } from "zod"
 import {
   ArrowDown,
@@ -27,6 +27,7 @@ import { AppSelect } from "@/components/app-select"
 import { PageSkeleton } from "@/components/page-skeleton"
 import { EmptyState } from "@/components/empty-state"
 import { ProductImage } from "@/components/product-image"
+import { categoryLabel } from "@/lib/categories"
 import { ProductDialog } from "@/components/product-dialog"
 import { useData } from "@/hooks/use-data"
 import { money, type Catalog as CatalogData, type Product } from "@/lib/types"
@@ -166,6 +167,10 @@ export function Catalog() {
       )
   }, [data, applied])
   const pagination = useListPagination(products.length, JSON.stringify(applied))
+  const visibleProducts = useMemo(
+    () => products.slice(pagination.start, pagination.end),
+    [products, pagination.start, pagination.end]
+  )
   if (loading) return <PageSkeleton />
   if (error)
     return (
@@ -385,39 +390,7 @@ export function Catalog() {
           </CollapsibleContent>
         </Collapsible>
         {products.length ? (
-          <div className="grid grid-cols-1 gap-x-5 gap-y-9 md:grid-cols-2 md:gap-x-7 lg:grid-cols-3">
-            {products.slice(pagination.start, pagination.end).map((p, i) => (
-              <button
-                key={p.id}
-                type="button"
-                className={`group min-w-0 text-left outline-offset-4 ${p.quantity <= 0 ? "opacity-50" : ""}`}
-                onClick={() => setSelected(p)}
-              >
-                <ProductImage id={p.images[0]} name={p.name} priority={i < 3} />
-                <div className="mt-4 flex items-start justify-between gap-2">
-                  <h3 className="line-clamp-2 text-sm font-medium sm:text-base">
-                    {p.name}
-                  </h3>
-                  <ArrowUpRight className="size-4 shrink-0 text-muted-foreground" />
-                </div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {p.tags.slice(0, 3).map((t) => (
-                    <Badge key={t} variant="secondary">
-                      {t}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-mono text-sm sm:text-base">
-                    {money(p.price)}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {p.quantity ? `剩餘 ${p.quantity} 件` : "已售完"}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
+          <ProductGrid products={visibleProducts} onSelect={setSelected} />
         ) : (
           <EmptyState
             title={data?.products.length ? "找不到符合的物品" : "架上暫時空了"}
@@ -442,12 +415,47 @@ export function Catalog() {
     </>
   )
 }
-export function categoryLabel(
-  id: string,
-  categories: CatalogData["categories"]
-): string {
-  const c = categories.find((c) => c.id === id)
-  return c
-    ? `${c.parent ? `${categoryLabel(c.parent, categories)} / ` : ""}${c.name}`
-    : "未分類"
-}
+
+const ProductGrid = memo(function ProductGrid({
+  products,
+  onSelect,
+}: {
+  products: Product[]
+  onSelect: (product: Product) => void
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-x-5 gap-y-9 md:grid-cols-2 md:gap-x-7 lg:grid-cols-3">
+      {products.map((p, i) => (
+        <button
+          key={p.id}
+          type="button"
+          className={`group min-w-0 text-left outline-offset-4 ${p.quantity <= 0 ? "opacity-50" : ""}`}
+          onClick={() => onSelect(p)}
+        >
+          <ProductImage id={p.images[0]} name={p.name} priority={i < 3} />
+          <div className="mt-4 flex items-start justify-between gap-2">
+            <h3 className="line-clamp-2 text-sm font-medium sm:text-base">
+              {p.name}
+            </h3>
+            <ArrowUpRight className="size-4 shrink-0 text-muted-foreground" />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {p.tags.slice(0, 3).map((t) => (
+              <Badge key={t} variant="secondary">
+                {t}
+              </Badge>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <span className="font-mono text-sm sm:text-base">
+              {money(p.price)}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {p.quantity ? `剩餘 ${p.quantity} 件` : "已售完"}
+            </span>
+          </div>
+        </button>
+      ))}
+    </div>
+  )
+})

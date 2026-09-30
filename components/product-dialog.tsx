@@ -10,8 +10,16 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { toast } from "@/components/ui/toast"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
+import dynamic from "next/dynamic"
+import { Skeleton } from "@/components/ui/skeleton"
+const MarkdownContent = dynamic(() => import("@/components/markdown-content"), {
+  loading: () => (
+    <div role="status" aria-label="載入商品說明" className="space-y-2">
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-3/4" />
+    </div>
+  ),
+})
 import {
   Dialog,
   DialogContent,
@@ -113,6 +121,7 @@ export function ProductDialog({
               key={product.images[selected]}
               id={product.images[selected]}
               name={product.name}
+              sizes="(max-width:767px) calc(100vw - 64px), 356px"
             />
             {product.images.length > 1 && (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -201,9 +210,9 @@ export function ProductDialog({
               </InputGroup>
             </FormField>
             <div className="markdown text-sm leading-7">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <MarkdownContent>
                 {product.description || "尚無商品說明。"}
-              </ReactMarkdown>
+              </MarkdownContent>
             </div>
           </div>
         </div>
