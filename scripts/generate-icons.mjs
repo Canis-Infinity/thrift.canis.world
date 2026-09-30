@@ -4,7 +4,8 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { Recycle } from "lucide-react"
 import { chromium } from "@playwright/test"
 
-// Match Brand: a 36px circle with the same 20px Lucide Recycle icon.
+// Match Brand and Debt's corner ratio (100 / 512), preserving the 20px Recycle icon.
+const radius = (36 * 100) / 512
 const css = await readFile(
   new URL("../app/globals.css", import.meta.url),
   "utf8"
@@ -15,7 +16,7 @@ const mark = renderToStaticMarkup(
   createElement(Recycle, { x: 8, y: 8, width: 20, height: 20 })
 )
 const svg = (maskable = false) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none" style="color:${foreground}">${maskable ? `<rect width="36" height="36" fill="${primary}"/>` : `<circle cx="18" cy="18" r="18" fill="${primary}"/>`}${mark}</svg>`
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none" style="color:${foreground}"><rect width="36" height="36" rx="${maskable ? 0 : radius}" fill="${primary}"/>${mark}</svg>`
 await writeFile(new URL("../app/icon.svg", import.meta.url), svg())
 const browser = await chromium.launch()
 try {
@@ -30,9 +31,13 @@ try {
   for (const size of [192, 512]) {
     await writeFile(
       new URL(`../public/icons/icon-${size}.png`, import.meta.url),
-      await png(size, size === 512)
+      await png(size)
     )
   }
+  await writeFile(
+    new URL("../public/icons/maskable-512.png", import.meta.url),
+    await png(512, true)
+  )
   await writeFile(
     new URL("../public/icons/apple-touch-icon.png", import.meta.url),
     await png(180)

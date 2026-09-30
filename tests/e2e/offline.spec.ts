@@ -36,10 +36,13 @@ test("離線頁保留樣式與主題，恢復連線後可以重試", async ({ pa
     fullPage: true,
   })
   const cached = await page.evaluate(async () => {
-    const cache = await caches.open("thrift-offline-v4")
+    const cache = await caches.open("thrift-offline-v5")
     return (await cache.keys()).map((request) => new URL(request.url).pathname)
   })
   expect(cached.some((path) => path.endsWith(".css"))).toBe(true)
+  expect(cached).toContain("/icons/icon-192.png")
+  expect(cached).toContain("/icons/icon-512.png")
+  expect(cached).toContain("/icons/maskable-512.png")
   expect(cached.some((path) => /\.(woff2?|ttf)$/.test(path))).toBe(true)
   expect(cached.some((path) => path.startsWith("/api/"))).toBe(false)
   await context.setOffline(false)

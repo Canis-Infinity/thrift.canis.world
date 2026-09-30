@@ -29,8 +29,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "THRIFT" },
   icons: {
-    icon: { url: "/icon.svg?v=logo-1", type: "image/svg+xml" },
-    apple: "/icons/apple-touch-icon.png?v=logo-1",
+    icon: { url: "/icon.svg?v=logo-2", type: "image/svg+xml" },
+    apple: "/icons/apple-touch-icon.png?v=logo-2",
   },
 }
 

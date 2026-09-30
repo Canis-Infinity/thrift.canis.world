@@ -11,13 +11,19 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "zh-TW",
     icons: [
       {
-        src: "/icons/icon-192.png?v=logo-1",
+        src: "/icons/icon-192.png?v=logo-2",
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icons/icon-512.png?v=logo-1",
+        src: "/icons/icon-512.png?v=logo-2",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/maskable-512.png?v=logo-2",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

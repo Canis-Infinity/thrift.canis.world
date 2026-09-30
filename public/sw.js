@@ -1,8 +1,9 @@
-const CACHE = "thrift-offline-v4"
+const CACHE = "thrift-offline-v5"
 const SHELL = [
   "/offline",
-  "/icons/icon-192.png?v=logo-1",
-  "/icons/icon-512.png?v=logo-1",
+  "/icons/icon-192.png?v=logo-2",
+  "/icons/icon-512.png?v=logo-2",
+  "/icons/maskable-512.png?v=logo-2",
 ]
 self.addEventListener("install", (event) => {
   event.waitUntil(
