@@ -1,26 +1,39 @@
 import { ProductImage } from "@/components/product-image"
 import { money, type OrderItem } from "@/lib/types"
+import {
+  Item,
+  ItemGroup,
+  ItemMedia,
+  ItemContent,
+  ItemTitle,
+  ItemDescription,
+  ItemActions,
+} from "@/components/ui/item"
 
 export function OrderItems({ items }: { items: OrderItem[] }) {
   return (
-    <ul className="space-y-4 text-left text-sm" aria-label="訂單商品">
+    <ItemGroup className="text-left" aria-label="訂單商品">
       {items.map((item) => (
-        <li key={item.product} className="flex items-center gap-3">
-          <ProductImage
-            key={item.image}
-            id={item.image ?? undefined}
-            name={item.name}
-            thumbnail
-          />
-          <div className="min-w-0 flex-1">
-            <p className="font-medium break-words">{item.name}</p>
-            <p className="mt-1 text-muted-foreground">數量 {item.quantity}</p>
-          </div>
-          <span className="shrink-0 font-mono">
+        <Item key={item.product} role="listitem">
+          <ItemMedia>
+            <ProductImage
+              key={item.image}
+              id={item.image ?? undefined}
+              name={item.name}
+              thumbnail
+            />
+          </ItemMedia>
+          <ItemContent className="min-w-0">
+            <ItemTitle className="line-clamp-none break-words">
+              {item.name}
+            </ItemTitle>
+            <ItemDescription>數量 {item.quantity}</ItemDescription>
+          </ItemContent>
+          <ItemActions className="ml-auto font-mono">
             {money(item.price * item.quantity)}
-          </span>
-        </li>
+          </ItemActions>
+        </Item>
       ))}
-    </ul>
+    </ItemGroup>
   )
 }

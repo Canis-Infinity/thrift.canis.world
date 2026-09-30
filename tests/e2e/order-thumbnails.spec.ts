@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test"
 
 for (const width of [1440, 320]) {
-  test(`${width}px 編輯訂單選項與選取結果顯示商品縮圖`, async ({ page }) => {
+  test(`${width}px 新增選項有縮圖且編輯只允許狀態與備註`, async ({ page }) => {
     await page.setViewportSize({ width, height: 850 })
     const products = ["one", "two"].map((id) => ({
       id,
@@ -42,7 +42,7 @@ for (const width of [1440, 320]) {
       r.fulfill({
         json: r.request().url().endsWith("/auth/me")
           ? { user: { id: "admin", role: "admin", name: "管理員" } }
-          : { products, orders: [order], categories: [], users: [] },
+          : { products, order, orders: [order], categories: [], users: [] },
       })
     )
     await page.goto("/admin/orders")
@@ -51,17 +51,23 @@ for (const width of [1440, 320]) {
       .click()
     const dialog = page.getByRole("dialog", { name: "編輯訂單", exact: true })
     await expect(dialog.getByRole("img")).toHaveAttribute("src", /photo-one/)
-    await dialog.getByRole("combobox", { name: /^商品 1/ }).click()
+    await expect(dialog.getByRole("combobox")).toHaveCount(1)
+    await expect(dialog.getByRole("textbox")).toHaveCount(1)
+    await expect(dialog.getByRole("spinbutton")).toHaveCount(0)
+    await expect(
+      dialog.getByRole("button", { name: "新增商品項目" })
+    ).toHaveCount(0)
+    await expect(dialog.getByRole("list", { name: "訂單商品" })).toContainText(
+      "同名收藏"
+    )
+    await page.screenshot({
+      path: test.info().outputPath(`editor-${width}.png`),
+    })
+    await dialog.getByRole("button", { name: "取消", exact: true }).click()
+    await page.getByRole("button", { name: "新增訂單", exact: true }).click()
+    await page.getByRole("combobox", { name: /^商品 1/ }).click()
     const options = page.getByRole("option").filter({ hasText: "同名收藏" })
     await expect(options).toHaveCount(2)
-    await expect
-      .poll(() =>
-        page.locator('[data-slot="select-content"]').evaluate((e) => {
-          const r = e.getBoundingClientRect()
-          return r.left >= 0 && r.right <= innerWidth
-        })
-      )
-      .toBe(true)
     await expect(options.nth(0).getByRole("img")).toHaveAttribute(
       "src",
       /photo-one/
@@ -70,16 +76,16 @@ for (const width of [1440, 320]) {
       "src",
       /photo-two/
     )
-    await page.screenshot({
-      path: test.info().outputPath(`options-${width}.png`),
-    })
     await options.nth(1).click()
-    await expect(dialog.getByRole("img")).toHaveAttribute("src", /photo-two/)
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth
-      )
-    ).toBe(true)
+    await page.goto("/order/" + "a".repeat(64))
+    const breadcrumb = page.getByRole("navigation", { name: "breadcrumb" })
+    await expect(breadcrumb.getByRole("link")).toHaveText([
+      "二手物品",
+      "商店管理",
+      "訂單管理",
+      "訂單詳情",
+    ])
+    await expect(breadcrumb).toContainText("訂單詳情")
   })
 }
 

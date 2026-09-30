@@ -351,7 +351,8 @@ function Navigation() {
 }
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const path = usePathname()
-  const { isOfflinePage } = useStore()
+  const { isOfflinePage, user } = useStore()
+  const isAdminOrder = path.startsWith("/order/") && user?.role === "admin"
   useEffect(() => {
     if (!window.location.hash) return scrollPageToTop()
   }, [path])
@@ -370,11 +371,21 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
-            {!isOfflinePage && path.startsWith("/admin/") && (
+            {!isOfflinePage && (path.startsWith("/admin/") || isAdminOrder) && (
               <>
                 <BreadcrumbItem>
                   <BreadcrumbLink render={<Link href="/admin" />}>
                     商店管理
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+              </>
+            )}
+            {!isOfflinePage && isAdminOrder && (
+              <>
+                <BreadcrumbItem>
+                  <BreadcrumbLink render={<Link href="/admin/orders" />}>
+                    訂單管理
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />

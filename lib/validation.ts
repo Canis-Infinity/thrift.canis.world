@@ -66,6 +66,12 @@ export const checkoutSchema = z.object({
   items: itemsSchema,
   note: z.string().max(2000),
 })
+export const orderUpdateSchema = z
+  .object({
+    status: z.enum(["pending", "confirmed", "completed", "cancelled"]),
+    note: z.string().trim().max(2000),
+  })
+  .strict()
 export const orderSchema = checkoutSchema.extend({
   status: z.enum(["pending", "confirmed", "completed", "cancelled"]),
 })
